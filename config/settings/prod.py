@@ -14,8 +14,6 @@ DATABASES = {
 }
 DATABASES["default"]["CONN_MAX_AGE"] = 60
 
-DATABASES["default"].setdefault("OPTIONS", {})
-DATABASES["default"]["OPTIONS"]["sslmode"] = "require"
 
 # --- Static files (WhiteNoise) ----------------------------------------
 # Must be inserted right after SecurityMiddleware (index 1).
@@ -55,3 +53,20 @@ if RENDER_HOSTNAME:
     CSRF_TRUSTED_ORIGINS = list(CSRF_TRUSTED_ORIGINS) + [
         f"https://{RENDER_HOSTNAME}"
     ]
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "loggers": {
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+    },
+}
