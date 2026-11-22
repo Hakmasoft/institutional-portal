@@ -34,3 +34,18 @@ Admin: `http://127.0.0.1:8000/admin/`
 - [x] Task 1 - Project scaffolding (uv)
 - [ ] Task 2 - Render deployment
 - [ ] Task 3 - Academic structure models
+
+## Deployment (Render)
+
+Create a Render Blueprint from this repository and apply `render.yaml`. Render
+creates the web service and Postgres database, generates the Django secret,
+and provides `DATABASE_URL` automatically.
+
+- Blueprint setup: select "New > Blueprint" in Render and connect this repository.
+- Deploys: `autoDeploy` is enabled for pushes to `main`.
+- Superuser: open the Render web-service Shell after deployment and run
+  `uv run python manage.py createsuperuser`.
+- Free-tier caveat: the web service sleeps after 15 minutes of inactivity.
+- Free Postgres caveat: free databases expire after 90 days.
+- HSTS follow-up: after confirming HTTPS deployment, set
+  `DJANGO_SECURE_HSTS_SECONDS` to an intentional positive value and redeploy.
