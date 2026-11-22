@@ -1,0 +1,59 @@
+institutional-portal/
+├── .env.example
+├── .gitignore
+├── .python-version
+├── LICENSE
+├── README.md
+├── db.sqlite3
+├── manage.py
+├── pyproject.toml
+├── project.tree
+├── task_report.md
+├── task-report.md
+├── uv.lock
+├── accounts/
+│   ├── __init__.py
+│   ├── admin.py
+│   ├── apps.py
+│   ├── migrations/
+│   │   └── __init__.py
+│   ├── models.py
+│   ├── tests.py
+│   └── views.py
+├── academics/
+│   ├── __init__.py
+│   ├── admin.py
+│   ├── apps.py
+│   ├── migrations/
+│   │   └── __init__.py
+│   ├── models.py
+│   ├── tests.py
+│   └── views.py
+├── attendance/
+│   ├── __init__.py
+│   ├── admin.py
+│   ├── apps.py
+│   ├── migrations/
+│   │   └── __init__.py
+│   ├── models.py
+│   ├── tests.py
+│   └── views.py
+├── config/
+│   ├── __init__.py
+│   ├── asgi.py
+│   ├── urls.py
+│   ├── views.py
+│   ├── wsgi.py
+│   └── settings/
+│       ├── __init__.py
+│       ├── base.py
+│       ├── dev.py
+│       └── prod.py
+├── docs/
+│   └── context/
+│       ├── overview.md
+│       └── security.md
+├── static/
+│   └── .gitkeep
+└── templates/
+    └── .gitkeep
