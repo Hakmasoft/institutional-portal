@@ -14,6 +14,9 @@ DATABASES = {
 }
 DATABASES["default"]["CONN_MAX_AGE"] = 60
 
+DATABASES["default"].setdefault("OPTIONS", {})
+DATABASES["default"]["OPTIONS"]["sslmode"] = "require"
+
 # --- Static files (WhiteNoise) ----------------------------------------
 # Must be inserted right after SecurityMiddleware (index 1).
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")  # noqa: F405
