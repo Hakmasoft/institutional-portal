@@ -14,9 +14,9 @@ echo "==> Syncing dependencies (frozen, no dev)"
 uv sync --frozen --no-dev
 
 echo "==> Collecting static files"
-uv run python manage.py collectstatic --noinput
+uv run python manage.py collectstatic --noinput --settings=config.settings.prod
 
 echo "==> Running migrations"
-uv run python manage.py migrate --noinput
+uv run python manage.py migrate --noinput --settings=config.settings.prod
 
 echo "==> Build complete"
