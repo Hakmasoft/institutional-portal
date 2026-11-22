@@ -1,4 +1,28 @@
-// local project files
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# uv / venv
+.venv/
+venv/
+
+# Django
+*.sqlite3
+db.sqlite3
+staticfiles/
+media/
+
+# Env
+.env
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Local project files
 instructions.md
 commit.txt
+task-report.md
 
