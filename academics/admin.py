@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from .models import AcademicYear, Course, CourseOffering, Term
+from .models import (
+    AcademicYear,
+    Course,
+    CourseOffering,
+    Department,
+    Faculty,
+    Programme,
+    Term,
+)
 
 
 @admin.register(AcademicYear)
@@ -22,9 +30,11 @@ class TermAdmin(admin.ModelAdmin):
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
     list_display = ("code", "title", "department", "credit_units")
-    list_filter = ("department",)
-    search_fields = ("code", "title", "department")
+    list_filter = ("department__faculty", "department")
+    search_fields = ("code", "title", "department__name", "department__code")
     ordering = ("code",)
+    autocomplete_fields = ("department",)
+    list_select_related = ("department",)
 
 
 @admin.register(CourseOffering)
@@ -39,3 +49,36 @@ class CourseOfferingAdmin(admin.ModelAdmin):
     )
     autocomplete_fields = ("course", "term", "coordinator")
     list_select_related = ("course", "term", "coordinator")
+
+
+@admin.register(Faculty)
+class FacultyAdmin(admin.ModelAdmin):
+    list_display = ("code", "name")
+    search_fields = ("code", "name")
+    ordering = ("name",)
+
+
+@admin.register(Department)
+class DepartmentAdmin(admin.ModelAdmin):
+    list_display = ("code", "name", "faculty")
+    list_filter = ("faculty",)
+    search_fields = ("code", "name", "faculty__name", "faculty__code")
+    ordering = ("faculty__name", "name")
+    autocomplete_fields = ("faculty",)
+    list_select_related = ("faculty",)
+
+
+@admin.register(Programme)
+class ProgrammeAdmin(admin.ModelAdmin):
+    list_display = ("code", "name", "department", "duration_years")
+    list_filter = ("department__faculty", "department")
+    search_fields = (
+        "code",
+        "name",
+        "department__name",
+        "department__code",
+        "department__faculty__name",
+    )
+    ordering = ("name",)
+    autocomplete_fields = ("department",)
+    list_select_related = ("department",)

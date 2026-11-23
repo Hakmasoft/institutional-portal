@@ -54,12 +54,64 @@ class Term(models.Model):
         return f"{self.academic_year} · {self.name}"
 
 
+class Faculty(models.Model):
+    name = models.CharField(max_length=150, unique=True)
+    code = models.CharField(max_length=10, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name_plural = "Faculties"
+
+    def __str__(self):
+        return f"{self.code} — {self.name}"
+
+
+class Department(models.Model):
+    faculty = models.ForeignKey(Faculty, on_delete=models.PROTECT, related_name="departments")
+    name = models.CharField(max_length=150)
+    code = models.CharField(max_length=10)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["faculty__name", "name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["faculty", "name"],
+                name="unique_department_name_per_faculty",
+            ),
+            models.UniqueConstraint(
+                fields=["faculty", "code"],
+                name="unique_department_code_per_faculty",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.code} — {self.name}"
+
+
+class Programme(models.Model):
+    department = models.ForeignKey(Department, on_delete=models.PROTECT, related_name="programmes")
+    name = models.CharField(max_length=200)
+    code = models.CharField(max_length=20, unique=True)
+    duration_years = models.PositiveSmallIntegerField(default=4)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name_plural = "Programmes"
+
+    def __str__(self):
+        return f"{self.code} — {self.name}"
+
+
 class Course(models.Model):
     code = models.CharField(max_length=20, unique=True)
     title = models.CharField(max_length=200)
-    # TODO: Promote to ForeignKey to a Department model when the academic
-    # hierarchy (Faculty → Department → Programme) is introduced in Task 4.
-    department = models.CharField(max_length=100)
+    department = models.ForeignKey(Department, on_delete=models.PROTECT, related_name="courses")
     credit_units = models.PositiveSmallIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
