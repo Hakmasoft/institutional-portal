@@ -5,6 +5,7 @@ from .models import (
     Course,
     CourseOffering,
     Department,
+    Enrollment,
     Faculty,
     Programme,
     Term,
@@ -82,3 +83,30 @@ class ProgrammeAdmin(admin.ModelAdmin):
     ordering = ("name",)
     autocomplete_fields = ("department",)
     list_select_related = ("department",)
+
+
+@admin.register(Enrollment)
+class EnrollmentAdmin(admin.ModelAdmin):
+    list_display = (
+        "student",
+        "course_offering",
+        "status",
+        "registered_at",
+    )
+    list_filter = (
+        "status",
+        "course_offering__term",
+        "course_offering__course__department",
+    )
+    search_fields = (
+        "student__student_number",
+        "student__user__first_name",
+        "student__user__last_name",
+        "student__user__email",
+        "course_offering__course__code",
+        "course_offering__course__title",
+    )
+    autocomplete_fields = ("student", "course_offering")
+    list_select_related = ("student", "course_offering")
+    ordering = ("-registered_at",)
+    date_hierarchy = "registered_at"

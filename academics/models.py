@@ -147,3 +147,53 @@ class CourseOffering(models.Model):
 
     def __str__(self):
         return f"{self.course.code} ({self.term})"
+
+    def active_enrollments(self):
+        """Enrollments with status='enrolled'. The base queryset for
+        attendance rosters, grade entry lists, and other per-offering
+        student listings.
+        """
+        # The literal "enrolled" matches Enrollment.Status.ENROLLED.
+        # Using the literal avoids a forward reference to a class defined
+        # later in this module; the enum value is stable so drift is not a
+        # realistic concern.
+        return self.enrollments.filter(status="enrolled")
+
+
+class Enrollment(models.Model):
+    class Status(models.TextChoices):
+        ENROLLED = "enrolled", "Enrolled"
+        DROPPED = "dropped", "Dropped"
+        COMPLETED = "completed", "Completed"
+
+    student = models.ForeignKey(
+        "accounts.Student",
+        on_delete=models.PROTECT,
+        related_name="enrollments",
+    )
+    course_offering = models.ForeignKey(
+        CourseOffering,
+        on_delete=models.PROTECT,
+        related_name="enrollments",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ENROLLED,
+    )
+    registered_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["course_offering", "student__student_number"]
+        constraints = [
+            UniqueConstraint(
+                fields=["student", "course_offering"],
+                name="unique_enrollment_per_student_per_offering",
+            ),
+        ]
+        verbose_name = "Enrollment"
+        verbose_name_plural = "Enrollments"
+
+    def __str__(self):
+        return f"{self.student} in {self.course_offering}"
