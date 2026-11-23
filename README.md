@@ -49,3 +49,34 @@ and provides `DATABASE_URL` automatically.
 - Free Postgres caveat: free databases expire after 90 days.
 - HSTS follow-up: after confirming HTTPS deployment, set
   `DJANGO_SECURE_HSTS_SECONDS` to an intentional positive value and redeploy.
+
+## Demo data
+
+This is a portal for a medical tertiary institution. For local
+development, populate a realistic dataset:
+
+    uv run python manage.py seed_demo
+
+This creates:
+- 2 faculties (Medicine, Nursing), 4 departments
+- 2 programmes (MBChB — Medicine & Surgery, BSN — Nursing)
+- 1 academic year with 1 current term
+- 4 courses (Anatomy, Physiology, Clinical Medicine, Nursing) with
+  course offerings
+- 2 staff (1 lecturer in Physiology, 1 HOD in Anatomy)
+- 10 students across the two programmes, enrolled across the offerings
+
+All demo users share the password `demo1234!`. Log in as:
+- `lecturer1` (lecturer, coordinates PHYS101 Medical Physiology I)
+- `hod_anat` (HOD, Anatomy)
+- `2023_mb_001` … `2024_bn_002` (medical and nursing students)
+
+Re-running `seed_demo` is idempotent (uses get_or_create throughout).
+
+To start fresh:
+
+    uv run python manage.py flush --no-input
+    uv run python manage.py seed_demo
+
+`seed_demo` refuses to run when `DEBUG=False` — it will raise
+`CommandError` to prevent accidental seeding of production databases.
