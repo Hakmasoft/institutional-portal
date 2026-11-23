@@ -1,10 +1,15 @@
+from datetime import time, timedelta
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.utils import timezone
 
 from academics.models import (
     AcademicYear,
+    AttendanceRecord,
+    ClassSession,
     Course,
     CourseOffering,
     Department,
@@ -39,6 +44,7 @@ class Command(BaseCommand):
         offerings = self._seed_offerings(courses, term)
         users = self._seed_users(departments, offerings, term)
         self._seed_students(users, offerings)
+        self._seed_sessions(offerings, users[0])
 
     def _seed_academic_structure(self):
         med = Faculty.objects.get_or_create(
@@ -165,7 +171,7 @@ class Command(BaseCommand):
                 "first_name": "Sarah",
                 "last_name": "Namubiru",
                 "email": "s.namubiru@demo.local",
-                # "is_staff": True,
+                "is_staff": True,
                 "is_active": True,
             },
         )
@@ -180,7 +186,7 @@ class Command(BaseCommand):
                 "first_name": "Joseph",
                 "last_name": "Kizito",
                 "email": "j.kizito@demo.local",
-                # "is_staff": True,
+                "is_staff": True,
                 "is_active": True,
             },
         )
@@ -278,4 +284,37 @@ class Command(BaseCommand):
                     student=student,
                     course_offering=offerings[code],
                     defaults={"status": "enrolled"},
+                )
+
+    def _seed_sessions(self, offerings, lecturer_user):
+        yesterday = timezone.localdate() - timedelta(days=1)
+        for code, offering in offerings.items():
+            session, _ = ClassSession.objects.get_or_create(
+                course_offering=offering,
+                date=yesterday,
+                start_time=time(9, 0),
+                defaults={
+                    "end_time": time(11, 0),
+                    "venue": "Main Hall",
+                    "topic": f"Introductory {code}",
+                    "status": ClassSession.Status.HELD,
+                    "created_by": lecturer_user,
+                },
+            )
+            enrollments = offering.enrollments.filter(status="enrolled")
+            enrollment_count = enrollments.count()
+            for idx, enrollment in enumerate(enrollments):
+                status = (
+                    AttendanceRecord.Status.PRESENT
+                    if idx < int(enrollment_count * 0.8)
+                    else AttendanceRecord.Status.ABSENT
+                )
+                AttendanceRecord.objects.get_or_create(
+                    session=session,
+                    enrollment=enrollment,
+                    defaults={
+                        "status": status,
+                        "capture_method": AttendanceRecord.CaptureMethod.MANUAL,
+                        "captured_by": lecturer_user,
+                    },
                 )

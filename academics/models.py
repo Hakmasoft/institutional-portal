@@ -1,6 +1,10 @@
+import uuid
+
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q, UniqueConstraint
+from django.utils import timezone
 
 
 class AcademicYear(models.Model):
@@ -160,6 +164,56 @@ class CourseOffering(models.Model):
         return self.enrollments.filter(status="enrolled")
 
 
+class ClassSession(models.Model):
+    class Status(models.TextChoices):
+        SCHEDULED = "scheduled", "Scheduled"
+        HELD = "held", "Held"
+        CANCELLED = "cancelled", "Cancelled"
+
+    course_offering = models.ForeignKey(
+        CourseOffering,
+        on_delete=models.CASCADE,
+        related_name="sessions",
+    )
+    date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    venue = models.CharField(max_length=100, blank=True, default="")
+    topic = models.CharField(max_length=200, blank=True, default="")
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.SCHEDULED,
+    )
+    created_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_sessions",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-date", "-start_time"]
+        constraints = [
+            UniqueConstraint(
+                fields=["course_offering", "date", "start_time"],
+                name="unique_session_per_offering_per_date_per_start",
+            ),
+        ]
+        verbose_name = "Class session"
+        verbose_name_plural = "Class sessions"
+
+    def __str__(self):
+        return f"{self.course_offering} · {self.date} {self.start_time:%H:%M}"
+
+    def clean(self):
+        if self.start_time and self.end_time and self.end_time <= self.start_time:
+            raise ValidationError({"end_time": "End time must be later than start time."})
+
+
 class Enrollment(models.Model):
     class Status(models.TextChoices):
         ENROLLED = "enrolled", "Enrolled"
@@ -197,3 +251,80 @@ class Enrollment(models.Model):
 
     def __str__(self):
         return f"{self.student} in {self.course_offering}"
+
+
+class AttendanceRecord(models.Model):
+    class Status(models.TextChoices):
+        PRESENT = "present", "Present"
+        ABSENT = "absent", "Absent"
+        LATE = "late", "Late"
+        EXCUSED = "excused", "Excused"
+
+    class CaptureMethod(models.TextChoices):
+        MANUAL = "manual", "Lecturer (manual)"
+        BIOMETRIC = "biometric", "Fingerprint scanner"
+        QR = "qr", "QR / self check-in"
+        IMPORT = "import", "CSV import"
+        OVERRIDE = "override", "Manual override"
+
+    session = models.ForeignKey(
+        ClassSession,
+        on_delete=models.PROTECT,
+        related_name="attendance_records",
+    )
+    enrollment = models.ForeignKey(
+        Enrollment,
+        on_delete=models.PROTECT,
+        related_name="attendance_records",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PRESENT,
+    )
+    capture_method = models.CharField(
+        max_length=20,
+        choices=CaptureMethod.choices,
+        default=CaptureMethod.MANUAL,
+    )
+    captured_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="captured_attendance",
+    )
+    captured_at = models.DateTimeField(default=timezone.now)
+    client_uuid = models.UUIDField(
+        unique=True,
+        default=uuid.uuid4,
+        editable=False,
+        help_text=(
+            "Idempotency key for offline/batch sync. Client generates UUIDv4 "
+            "on the device; server stores it to de-duplicate re-posts."
+        ),
+    )
+    notes = models.TextField(
+        blank=True,
+        default="",
+        help_text="Reason for override, or other free-text annotation.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["session", "enrollment__student__student_number"]
+        constraints = [
+            UniqueConstraint(
+                fields=["session", "enrollment"],
+                name="unique_attendance_per_session_per_enrollment",
+            ),
+        ]
+        verbose_name = "Attendance record"
+        verbose_name_plural = "Attendance records"
+
+    def __str__(self):
+        return (
+            f"{self.enrollment.student.student_number} · "
+            f"{self.session} · {self.get_status_display()}"
+        )

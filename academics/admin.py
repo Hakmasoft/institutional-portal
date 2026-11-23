@@ -2,6 +2,8 @@ from django.contrib import admin
 
 from .models import (
     AcademicYear,
+    AttendanceRecord,
+    ClassSession,
     Course,
     CourseOffering,
     Department,
@@ -110,3 +112,71 @@ class EnrollmentAdmin(admin.ModelAdmin):
     list_select_related = ("student", "course_offering")
     ordering = ("-registered_at",)
     date_hierarchy = "registered_at"
+
+
+@admin.register(ClassSession)
+class ClassSessionAdmin(admin.ModelAdmin):
+    list_display = (
+        "course_offering",
+        "date",
+        "start_time",
+        "end_time",
+        "status",
+        "venue",
+        "topic",
+    )
+    list_filter = (
+        "status",
+        "date",
+        "course_offering__term",
+        "course_offering__course__department",
+    )
+    search_fields = (
+        "course_offering__course__code",
+        "course_offering__course__title",
+        "venue",
+        "topic",
+    )
+    autocomplete_fields = ("course_offering", "created_by")
+    list_select_related = (
+        "course_offering",
+        "course_offering__course",
+        "course_offering__term",
+    )
+    ordering = ("-date", "-start_time")
+    date_hierarchy = "date"
+
+
+@admin.register(AttendanceRecord)
+class AttendanceRecordAdmin(admin.ModelAdmin):
+    list_display = (
+        "session",
+        "enrollment",
+        "status",
+        "capture_method",
+        "captured_by",
+        "captured_at",
+    )
+    list_filter = (
+        "status",
+        "capture_method",
+        "session__date",
+        "session__course_offering__term",
+    )
+    search_fields = (
+        "enrollment__student__student_number",
+        "enrollment__student__user__first_name",
+        "enrollment__student__user__last_name",
+        "session__course_offering__course__code",
+        "session__course_offering__course__title",
+    )
+    autocomplete_fields = ("session", "enrollment", "captured_by")
+    list_select_related = (
+        "session",
+        "session__course_offering",
+        "enrollment",
+        "enrollment__student",
+    )
+    ordering = ("-captured_at",)
+    date_hierarchy = "captured_at"
+    readonly_fields = ("client_uuid",)
