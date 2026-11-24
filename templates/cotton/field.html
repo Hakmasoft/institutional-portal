@@ -1,0 +1,28 @@
+<div class="flex flex-col gap-1">
+    {% if label %}
+        <label for="{{ id|default:name }}" class="text-sm font-medium">{{ label }}</label>
+    {% endif %}
+    <div class="[&_input]:w-full [&_input]:rounded-md
+                [&_input]:border [&_input]:border-border-strong
+                [&_input]:bg-surface [&_input]:px-3 [&_input]:py-2.5
+                [&_input]:min-h-11
+                [&_input:focus-visible]:outline-2
+                [&_input:focus-visible]:outline-offset-0
+                [&_input:focus-visible]:outline-primary
+                [&_input:focus-visible]:border-primary
+                [&_select]:w-full [&_select]:rounded-md
+                [&_select]:border [&_select]:border-border-strong
+                [&_select]:bg-surface [&_select]:px-3 [&_select]:py-2.5
+                [&_select]:min-h-11
+                [&_textarea]:w-full [&_textarea]:rounded-md
+                [&_textarea]:border [&_textarea]:border-border-strong
+                [&_textarea]:bg-surface [&_textarea]:px-3 [&_textarea]:py-2.5">
+        {{ slot }}
+    </div>
+    {% if help %}
+        <span class="text-sm text-text-muted">{{ help }}</span>
+    {% endif %}
+    {% if error %}
+        <span class="text-sm font-medium text-danger">{{ error }}</span>
+    {% endif %}
+</div>

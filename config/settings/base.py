@@ -23,6 +23,9 @@ INSTALLED_APPS = [
     "accounts",
     "academics",
     "attendance",
+    "django_tailwind_cli",
+    "django_cotton",
+    "portal",
 ]
 
 MIDDLEWARE = [
@@ -62,8 +65,15 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [
+    BASE_DIR / "assets",
+]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Auth / login configuration
+LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "/"
-LOGOUT_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "accounts:login"
+
+TAILWIND_CLI_SRC_CSS = BASE_DIR / "assets" / "css" / "source.css"

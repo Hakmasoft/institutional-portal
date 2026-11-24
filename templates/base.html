@@ -1,0 +1,28 @@
+{% load static tailwind_cli %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Institutional Portal{% endblock %}</title>
+    {% tailwind_css %}
+</head>
+<body class="bg-bg text-text">
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <c-nav />
+
+    <main id="main-content" tabindex="-1" class="center py-6">
+        {% if messages %}
+            {% for message in messages %}
+                <c-flash variant="{{ message.tags }}">{{ message }}</c-flash>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="py-6 pb-8 text-center text-sm text-text-muted">
+        Institutional Portal &middot; medical tertiary institution
+    </footer>
+</body>
+</html>

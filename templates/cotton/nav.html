@@ -1,0 +1,37 @@
+<nav class="bg-primary px-4 py-3 text-white sm:px-6 lg:px-8"
+     aria-label="Main navigation">
+    <div class="mx-auto flex max-w-(--container-page) flex-wrap items-center gap-4">
+        <a href="{% url 'portal:home' %}"
+           class="text-lg font-semibold text-white no-underline hover:underline">
+            Institutional Portal
+        </a>
+        {% if user.is_authenticated %}
+            {% if user.is_lecturer %}
+                <a href="{% url 'portal:lecturer_home' %}"
+                   class="font-medium text-white no-underline hover:underline">My Courses</a>
+            {% elif user.is_student %}
+                <a href="{% url 'portal:student_home' %}"
+                   class="font-medium text-white no-underline hover:underline">My Courses</a>
+            {% endif %}
+            {% if user.is_superuser or user.role == "admin" %}
+                <a href="/admin/"
+                   class="font-medium text-white no-underline hover:underline">Admin</a>
+            {% endif %}
+        {% endif %}
+        <span class="flex-1"></span>
+        {% if user.is_authenticated %}
+            <span class="hidden text-sm opacity-95 sm:inline">
+                {{ user.get_full_name|default:user.username }}
+            </span>
+            <form method="post" action="{% url 'accounts:logout' %}">
+                {% csrf_token %}
+                <button type="submit"
+                        class="rounded-sm border border-white/50 px-3 py-1
+                               text-sm font-medium text-white transition-colors
+                               hover:border-white hover:bg-white/10">
+                    Log out
+                </button>
+            </form>
+        {% endif %}
+    </div>
+</nav>

@@ -1,0 +1,9 @@
+<span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5
+             text-xs font-semibold
+             {% if variant == 'present' %}bg-present-soft text-present
+             {% elif variant == 'absent' %}bg-absent-soft text-absent
+             {% elif variant == 'late' %}bg-late-soft text-late
+             {% elif variant == 'excused' %}bg-excused-soft text-excused
+             {% else %}bg-surface-muted text-text-muted{% endif %}">
+    {{ slot }}
+</span>

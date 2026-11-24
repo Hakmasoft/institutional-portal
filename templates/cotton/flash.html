@@ -1,0 +1,8 @@
+<div role="status"
+     class="mb-4 rounded-md border px-4 py-3 text-sm
+            {% if variant == 'success' %}border-success bg-success-soft text-success
+            {% elif variant == 'error' %}border-danger bg-danger-soft text-danger
+            {% elif variant == 'warning' %}border-warning bg-warning-soft text-warning
+            {% else %}border-info bg-info-soft text-info{% endif %}">
+    {{ slot }}
+</div>

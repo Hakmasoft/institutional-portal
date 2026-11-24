@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}My Courses &middot; Institutional Portal{% endblock %}
+
+{% block content %}
+<h1>Welcome, {{ student.user.get_full_name|default:student.user.username }}</h1>
+
+<c-card>
+    <div class="cluster">
+        <div>
+            <div class="text-sm text-text-muted">Student number</div>
+            <div><strong>{{ student.student_number }}</strong></div>
+        </div>
+        <div>
+            <div class="text-sm text-text-muted">Programme</div>
+            <div>{{ student.programme.name }}</div>
+        </div>
+        <div>
+            <div class="text-sm text-text-muted">Year of study</div>
+            <div>{{ student.year_of_study }}</div>
+        </div>
+    </div>
+</c-card>
+
+<h2>My Courses</h2>
+
+{% if enrollments %}
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {% for enrollment in enrollments %}
+            <c-card>
+                <div class="mb-3 flex items-baseline justify-between gap-3">
+                    <h3 class="m-0">{{ enrollment.course_offering.course.code }}</h3>
+                    <c-badge>{{ enrollment.course_offering.course.credit_units }} CU</c-badge>
+                </div>
+                <p class="m-0">{{ enrollment.course_offering.course.title }}</p>
+                <p class="m-0 text-sm text-text-muted">
+                    {{ enrollment.course_offering.term }}
+                </p>
+            </c-card>
+        {% endfor %}
+    </div>
+{% else %}
+    <c-empty-state title="No courses yet">
+        You are not enrolled in any courses this term.
+    </c-empty-state>
+{% endif %}
+
+<p class="mt-6 text-sm text-text-muted">
+    <em>Attendance history and results will appear here in a future release.</em>
+</p>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}My Courses &middot; Institutional Portal{% endblock %}
+
+{% block content %}
+<h1>Welcome, {{ user.get_full_name|default:user.username }}</h1>
+
+<h2>Courses I coordinate</h2>
+
+{% if offerings %}
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {% for offering in offerings %}
+            <c-card>
+                <div class="mb-3 flex items-baseline justify-between gap-3">
+                    <h3 class="m-0">{{ offering.course.code }}</h3>
+                    <c-badge>{{ offering.enrollments.count }} students</c-badge>
+                </div>
+                <p class="m-0">{{ offering.course.title }}</p>
+                <p class="m-0 text-sm text-text-muted">{{ offering.term }}</p>
+            </c-card>
+        {% endfor %}
+    </div>
+{% else %}
+    <c-empty-state title="No coordinated courses">
+        You have no coordinated courses this term.
+    </c-empty-state>
+{% endif %}
+
+<p class="mt-6 text-sm text-text-muted">
+    <em>Attendance marking, grading, and analytics will arrive in upcoming releases.</em>
+</p>
+{% endblock %}

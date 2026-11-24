@@ -1,0 +1,25 @@
+{% if href %}
+    <a href="{{ href }}"
+       class="inline-flex items-center justify-center gap-2 rounded-md
+              px-4 py-2.5 text-base font-medium no-underline transition-colors
+              {% if variant == 'primary' %}bg-primary text-white hover:bg-primary-hover
+              {% elif variant == 'secondary' %}border border-border-strong bg-surface text-text hover:bg-surface-muted
+              {% elif variant == 'danger' %}bg-danger text-white hover:bg-red-800
+              {% elif variant == 'ghost' %}text-primary hover:bg-primary-soft
+              {% else %}bg-primary text-white hover:bg-primary-hover{% endif %}
+              {% if block %}w-full{% endif %}">
+        {{ slot }}
+    </a>
+{% else %}
+    <button type="{{ type|default:'button' }}"
+            class="inline-flex items-center justify-center gap-2 rounded-md
+                   px-4 py-2.5 text-base font-medium transition-colors
+                   {% if variant == 'primary' %}bg-primary text-white hover:bg-primary-hover
+                   {% elif variant == 'secondary' %}border border-border-strong bg-surface text-text hover:bg-surface-muted
+                   {% elif variant == 'danger' %}bg-danger text-white hover:bg-red-800
+                   {% elif variant == 'ghost' %}text-primary hover:bg-primary-soft
+                   {% else %}bg-primary text-white hover:bg-primary-hover{% endif %}
+                   {% if block %}w-full{% endif %}">
+        {{ slot }}
+    </button>
+{% endif %}

@@ -50,6 +50,40 @@ and provides `DATABASE_URL` automatically.
 - HSTS follow-up: after confirming HTTPS deployment, set
   `DJANGO_SECURE_HSTS_SECONDS` to an intentional positive value and redeploy.
 
+## Logging in
+
+Anonymous visitors to `/` are redirected to `/accounts/login/`. After
+login, users are routed to their role-specific home:
+
+| Role | Home |
+|------|------|
+| `student` | `/student/` (my courses) |
+| `lecturer` / `hod` / `dean` | `/lecturer/` (my coordinated courses) |
+| `admin` / superuser | `/admin/` (Django admin) |
+| `registrar`, `finance`, `parent` | generic welcome page (placeholder) |
+
+Demo credentials (after `seed_demo`):
+
+- Lecturer: `lecturer1` / `demo1234!`
+- Student: `2023_mb_001` / `demo1234!`
+- HOD: `hod_anat` / `demo1234!`
+- Superuser: whichever you created via `createsuperuser`
+
+## Design system
+
+The UI is built on Tailwind CSS v4 (via `django-tailwind-cli`) and
+`django-cotton` for component abstraction. See
+[`docs/design.md`](docs/design.md) for tokens, components,
+accessibility commitments, and development workflow.
+
+### Frontend workflow
+
+- **Dev:** `python manage.py tailwind runserver`
+- **Or separate:** `python manage.py tailwind watch` + `runserver`
+- **Production:** `python manage.py tailwind build` then `collectstatic`
+- **After changing Tailwind classes or `assets/css/source.css`:** rebuild
+  via the watcher or `tailwind build`
+
 ## Demo data
 
 This is a portal for a medical tertiary institution. For local

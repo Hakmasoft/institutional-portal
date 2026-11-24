@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome &middot; Institutional Portal{% endblock %}
+
+{% block content %}
+<h1>Welcome, {{ user.get_full_name|default:user.username }}</h1>
+
+<c-empty-state title="Coming soon">
+    Your role ({{ user.get_role_display|default:"-" }}) does not yet
+    have a dedicated home page. More will arrive in upcoming releases.
+</c-empty-state>
+
+{% if user.is_staff %}
+<p class="mt-6 text-sm">
+    You have admin panel access: <a href="/admin/">go to admin</a>.
+</p>
+{% endif %}
+{% endblock %}

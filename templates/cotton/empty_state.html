@@ -1,0 +1,7 @@
+<div class="rounded-md border border-dashed border-border-strong
+            bg-surface p-8 text-center text-text-muted">
+    {% if title %}
+        <h3 class="mb-2 text-base font-semibold text-text">{{ title }}</h3>
+    {% endif %}
+    <p class="mb-0">{{ slot }}</p>
+</div>
