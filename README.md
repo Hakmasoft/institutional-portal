@@ -67,8 +67,11 @@ login, users are routed to their role-specific home:
 - `/lecturer/` — grid of coordinated offerings
 - `/lecturer/offerings/<id>/` — offering detail: course info, recent
   sessions, enrolled students roster, "Take attendance" action
-- `/lecturer/offerings/<id>/attendance/today/` — attendance marking
-  (placeholder until Task 11)
+- `/lecturer/offerings/<id>/attendance/today/` — attendance marking UI:
+  sticky header with session context and live summary, one row per
+  enrolled student with four status toggles (present/absent/late/excused),
+  sticky footer with "mark all present" / "mark all absent" bulk actions
+  and a disabled Save button (submission lands in the next release)
 
 Object-level authorization: the coordinator of the offering, the HOD of
 its department, the Dean of its faculty, and superusers can all view.

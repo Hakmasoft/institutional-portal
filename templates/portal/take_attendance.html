@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Take attendance &middot; {{ offering.course.code }}{% endblock %}
+{% block main_class %}{% endblock %}
+
+{% block content %}
+<div class="attendance-page">
+    <header class="attendance-header">
+        <div class="attendance-header-inner">
+            <div class="attendance-header-top">
+                <a href="{% url 'portal:offering_detail' offering.pk %}"
+                   class="attendance-back">
+                    &larr; {{ offering.course.code }}
+                </a>
+                <div class="attendance-session-context">
+                    <strong>{{ session.date|date:"j M Y" }}</strong>
+                    &middot;
+                    {{ session.start_time|time:"H:i" }}&ndash;{{ session.end_time|time:"H:i" }}
+                    {% if session.venue %}&middot; {{ session.venue }}{% endif %}
+                </div>
+            </div>
+            <div class="attendance-summary" id="attendance-summary" aria-live="polite">
+                Counting…
+            </div>
+        </div>
+    </header>
+
+    <form id="attendance-form" class="attendance-form">
+        {% csrf_token %}
+
+        <div class="attendance-roster">
+            {% for row in roster %}
+                <div class="attendance-row">
+                    <div class="attendance-student">
+                        <div class="attendance-student-number">
+                            {{ row.enrollment.student.student_number }}
+                        </div>
+                        <div class="attendance-student-name">
+                            {{ row.enrollment.student.user.get_full_name|default:row.enrollment.student.user.username }}
+                        </div>
+                    </div>
+                    <div class="attendance-toggles" role="radiogroup"
+                         aria-label="Attendance for {{ row.enrollment.student.user.get_full_name|default:row.enrollment.student.user.username }}">
+                        {% for s in statuses %}
+                            <input type="radio"
+                                   class="attendance-radio"
+                                   id="status-{{ row.enrollment.pk }}-{{ s.value }}"
+                                   name="status_{{ row.enrollment.pk }}"
+                                   value="{{ s.value }}"
+                                   {% if row.status == s.value %}checked{% endif %}>
+                            <label for="status-{{ row.enrollment.pk }}-{{ s.value }}"
+                                   class="attendance-toggle attendance-toggle--{{ s.value }}">
+                                <span class="label-short">{{ s.short }}</span>
+                                <span class="label-full">{{ s.full }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% empty %}
+                <div class="attendance-empty">
+                    <p>No students are enrolled in this offering.</p>
+                    <a href="{% url 'portal:offering_detail' offering.pk %}">
+                        &larr; Back to {{ offering.course.code }}
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if roster %}
+            <footer class="attendance-footer">
+                <div class="attendance-footer-inner">
+                    <div class="attendance-bulk-actions">
+                        <button type="button" class="attendance-bulk"
+                                data-bulk="absent">
+                            Mark all absent
+                        </button>
+                        <button type="button" class="attendance-bulk"
+                                data-bulk="present">
+                            Mark all present
+                        </button>
+                    </div>
+                    <div class="attendance-save-wrap">
+                        <button type="submit" class="attendance-save" disabled>
+                            Save attendance
+                        </button>
+                        <span class="attendance-save-note">
+                            Saving will be enabled in the next release.
+                        </span>
+                    </div>
+                </div>
+            </footer>
+        {% endif %}
+    </form>
+</div>
+
+<script src="{% static 'js/attendance.js' %}" defer></script>
+{% endblock %}

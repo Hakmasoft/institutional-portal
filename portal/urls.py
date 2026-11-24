@@ -15,7 +15,7 @@ urlpatterns = [
     ),
     path(
         "lecturer/offerings/<int:pk>/attendance/today/",
-        views.take_attendance_placeholder,
+        views.take_attendance,
         name="take_attendance",
     ),
 ]

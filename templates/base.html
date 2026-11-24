@@ -11,7 +11,8 @@
 
     <c-nav />
 
-    <main id="main-content" tabindex="-1" class="center py-6">
+    <main id="main-content" tabindex="-1"
+          class="{% block main_class %}center py-6{% endblock %}">
         {% if messages %}
             {% for message in messages %}
                 <c-flash variant="{{ message.tags }}">{{ message }}</c-flash>
