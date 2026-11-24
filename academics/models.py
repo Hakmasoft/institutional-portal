@@ -402,11 +402,6 @@ class AttendanceCaptureConfig(models.Model):
                 condition=Q(offering__isnull=False),
                 name="unique_capture_config_per_offering",
             ),
-            UniqueConstraint(
-                fields=["offering"],
-                condition=Q(offering__isnull=True),
-                name="only_one_global_capture_config",
-            ),
         ]
         verbose_name = "Attendance capture config"
         verbose_name_plural = "Attendance capture configs"
@@ -414,6 +409,21 @@ class AttendanceCaptureConfig(models.Model):
     def __str__(self):
         scope = self.offering or "Institution default"
         return f"{scope} — {self.get_method_display()}"
+
+    def clean(self):
+        if self.offering_id is None:
+            existing = AttendanceCaptureConfig.objects.filter(offering__isnull=True).exclude(
+                pk=self.pk
+            )
+            if existing.exists():
+                raise ValidationError(
+                    {
+                        "offering": (
+                            "An institution-wide config already exists. "
+                            "Edit the existing one instead of creating a new one."
+                        )
+                    }
+                )
 
 
 class AttendanceDevice(models.Model):
