@@ -2,7 +2,11 @@ from django.contrib import admin
 
 from .models import (
     AcademicYear,
+    AttendanceCaptureConfig,
+    AttendanceDevice,
+    AttendanceEvent,
     AttendanceRecord,
+    BiometricEnrollment,
     ClassSession,
     Course,
     CourseOffering,
@@ -180,3 +184,63 @@ class AttendanceRecordAdmin(admin.ModelAdmin):
     ordering = ("-captured_at",)
     date_hierarchy = "captured_at"
     readonly_fields = ("client_uuid",)
+
+
+@admin.register(AttendanceCaptureConfig)
+class AttendanceCaptureConfigAdmin(admin.ModelAdmin):
+    list_display = (
+        "offering",
+        "method",
+        "conflict_policy",
+        "grace_minutes_before",
+        "grace_minutes_after",
+    )
+    list_filter = ("method", "conflict_policy")
+    search_fields = (
+        "offering__course__code",
+        "offering__course__title",
+        "offering__term__name",
+    )
+    autocomplete_fields = ("offering",)
+    list_select_related = ("offering",)
+
+
+@admin.register(AttendanceDevice)
+class AttendanceDeviceAdmin(admin.ModelAdmin):
+    list_display = ("name", "device_type", "location", "is_active", "last_seen_at")
+    list_filter = ("device_type", "is_active")
+    search_fields = ("name", "location")
+    filter_horizontal = ("offerings",)
+    readonly_fields = ("api_key_hash", "last_seen_at")
+
+
+@admin.register(BiometricEnrollment)
+class BiometricEnrollmentAdmin(admin.ModelAdmin):
+    list_display = (
+        "student",
+        "device_type",
+        "template_ref",
+        "is_active",
+        "enrolled_at",
+    )
+    list_filter = ("device_type", "is_active")
+    search_fields = (
+        "student__student_number",
+        "student__user__first_name",
+        "student__user__last_name",
+        "template_ref",
+    )
+    autocomplete_fields = ("student",)
+    list_select_related = ("student",)
+
+
+@admin.register(AttendanceEvent)
+class AttendanceEventAdmin(admin.ModelAdmin):
+    list_display = ("device", "external_id", "subject_ref", "observed_at", "status")
+    list_filter = ("status", "device__device_type", "device")
+    search_fields = ("external_id", "subject_ref", "device__name")
+    autocomplete_fields = ("device", "resolved_record")
+    list_select_related = ("device",)
+    readonly_fields = ("raw_payload",)
+    ordering = ("-observed_at",)
+    date_hierarchy = "observed_at"

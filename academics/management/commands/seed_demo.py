@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from academics.models import (
     AcademicYear,
+    AttendanceCaptureConfig,
     AttendanceRecord,
     ClassSession,
     Course,
@@ -42,9 +43,19 @@ class Command(BaseCommand):
         term = self._seed_term()
         courses = self._seed_courses(departments)
         offerings = self._seed_offerings(courses, term)
+        self._seed_capture_config()
         users = self._seed_users(departments, offerings, term)
         self._seed_students(users, offerings)
         self._seed_sessions(offerings, users[0])
+
+    def _seed_capture_config(self):
+        AttendanceCaptureConfig.objects.get_or_create(
+            offering=None,
+            defaults={
+                "method": AttendanceCaptureConfig.Method.MANUAL,
+                "conflict_policy": AttendanceCaptureConfig.ConflictPolicy.FLAG,
+            },
+        )
 
     def _seed_academic_structure(self):
         med = Faculty.objects.get_or_create(

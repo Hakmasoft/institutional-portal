@@ -294,6 +294,17 @@ class AttendanceRecord(models.Model):
         blank=True,
         related_name="captured_attendance",
     )
+    captured_by_device = models.ForeignKey(
+        "AttendanceDevice",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="captured_attendance",
+        help_text=(
+            "Set when the record was created by a device event (biometric/QR). "
+            "NULL for manual marking."
+        ),
+    )
     captured_at = models.DateTimeField(default=timezone.now)
     client_uuid = models.UUIDField(
         unique=True,
@@ -328,3 +339,252 @@ class AttendanceRecord(models.Model):
             f"{self.enrollment.student.student_number} · "
             f"{self.session} · {self.get_status_display()}"
         )
+
+
+class AttendanceCaptureConfig(models.Model):
+    class Method(models.TextChoices):
+        MANUAL = "manual", "Manual only"
+        BIOMETRIC = "biometric", "Biometric only"
+        HYBRID = "hybrid", "Hybrid (biometric preferred, manual allowed)"
+
+    class ConflictPolicy(models.TextChoices):
+        FLAG = "flag", "Flag for review"
+        BIOMETRIC_WINS = "biometric_wins", "Biometric wins"
+        MANUAL_WINS = "manual_wins", "Manual wins"
+
+    offering = models.OneToOneField(
+        CourseOffering,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="capture_config",
+        help_text=(
+            "Leave blank for the institution-wide default. Set to override "
+            "the capture method for a specific course offering."
+        ),
+    )
+    method = models.CharField(
+        max_length=20,
+        choices=Method.choices,
+        default=Method.MANUAL,
+    )
+    grace_minutes_before = models.PositiveSmallIntegerField(
+        default=15,
+        help_text=(
+            "Minutes before the session start within which a device event "
+            "is still considered part of this session."
+        ),
+    )
+    grace_minutes_after = models.PositiveSmallIntegerField(
+        default=15,
+        help_text=(
+            "Minutes after the session end within which a device event is "
+            "still considered part of this session."
+        ),
+    )
+    conflict_policy = models.CharField(
+        max_length=20,
+        choices=ConflictPolicy.choices,
+        default=ConflictPolicy.FLAG,
+        help_text=(
+            "How to resolve disagreements between a manual mark and a "
+            "biometric observation for the same session."
+        ),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["offering"]
+        constraints = [
+            UniqueConstraint(
+                fields=["offering"],
+                condition=Q(offering__isnull=False),
+                name="unique_capture_config_per_offering",
+            ),
+            UniqueConstraint(
+                fields=["offering"],
+                condition=Q(offering__isnull=True),
+                name="only_one_global_capture_config",
+            ),
+        ]
+        verbose_name = "Attendance capture config"
+        verbose_name_plural = "Attendance capture configs"
+
+    def __str__(self):
+        scope = self.offering or "Institution default"
+        return f"{scope} — {self.get_method_display()}"
+
+
+class AttendanceDevice(models.Model):
+    class DeviceType(models.TextChoices):
+        FINGERPRINT = "fingerprint", "Fingerprint scanner"
+        QR_TERMINAL = "qr_terminal", "QR / card terminal"
+
+    name = models.CharField(max_length=100)
+    device_type = models.CharField(
+        max_length=20,
+        choices=DeviceType.choices,
+    )
+    location = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+        help_text='Physical location, e.g. "Physiology Lab — Room 2".',
+    )
+    offerings = models.ManyToManyField(
+        CourseOffering,
+        blank=True,
+        related_name="attendance_devices",
+        help_text=(
+            "Course offerings this device reports events for. Empty means "
+            "the device is provisioned but not yet assigned."
+        ),
+    )
+    api_key_hash = models.CharField(
+        max_length=128,
+        blank=True,
+        default="",
+        help_text=(
+            "Hash of the device's API key. Empty until provisioning. Never "
+            "store the plaintext key here. Provisoning UI: TODO."
+        ),
+    )
+    last_seen_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Updated by the device on each successful event POST. TODO.",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text=(
+            "Deactivated devices are rejected by the event ingest endpoint "
+            "even if their API key is valid."
+        ),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "Attendance device"
+        verbose_name_plural = "Attendance devices"
+
+    def __str__(self):
+        return f"{self.name} ({self.get_device_type_display()})"
+
+
+class BiometricEnrollment(models.Model):
+    student = models.ForeignKey(
+        "accounts.Student",
+        on_delete=models.CASCADE,
+        related_name="biometric_enrollments",
+    )
+    device_type = models.CharField(
+        max_length=20,
+        choices=AttendanceDevice.DeviceType.choices,
+        help_text=(
+            "Fingerprint template formats are vendor/protocol specific. A "
+            "student may be enrolled on multiple device families."
+        ),
+    )
+    template_ref = models.CharField(
+        max_length=200,
+        help_text=(
+            "Opaque reference assigned by the scanner for this student's "
+            "biometric template. NOT the template itself — the biometric "
+            "data stays on the device."
+        ),
+    )
+    enrolled_at = models.DateTimeField(default=timezone.now)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["student", "device_type"]
+        constraints = [
+            UniqueConstraint(
+                fields=["device_type", "template_ref"],
+                name="unique_template_ref_per_device_type",
+            ),
+            UniqueConstraint(
+                fields=["student", "device_type"],
+                condition=Q(is_active=True),
+                name="unique_active_biometric_per_student_per_device_type",
+            ),
+        ]
+        verbose_name = "Biometric enrollment"
+        verbose_name_plural = "Biometric enrollments"
+
+    def __str__(self):
+        return f"{self.student} → {self.device_type}:{self.template_ref}"
+
+
+class AttendanceEvent(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        MATCHED = "matched", "Matched"
+        DUPLICATE = "duplicate", "Duplicate"
+        UNMATCHED_SUBJECT = "unmatched_subject", "Unmatched subject"
+        UNMATCHED_SESSION = "unmatched_session", "No session in window"
+        AMBIGUOUS = "ambiguous", "Ambiguous — multiple candidate sessions"
+        CONFLICT = "conflict", "Manual/biometric conflict"
+        REJECTED = "rejected", "Rejected after review"
+
+    device = models.ForeignKey(
+        AttendanceDevice,
+        on_delete=models.PROTECT,
+        related_name="events",
+    )
+    external_id = models.CharField(
+        max_length=100,
+        help_text="Event ID assigned by the device. Unique per device.",
+    )
+    subject_ref = models.CharField(
+        max_length=200,
+        help_text=(
+            "Raw subject identifier from the device — usually a template_ref "
+            "or a student card number."
+        ),
+    )
+    observed_at = models.DateTimeField(
+        help_text="Time from the device clock, not the server clock.",
+    )
+    raw_payload = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Original event body for debugging and replay.",
+    )
+    status = models.CharField(
+        max_length=30,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    resolved_record = models.ForeignKey(
+        AttendanceRecord,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="source_events",
+        help_text=(
+            "Populated when a PENDING event is reconciled into an "
+            "AttendanceRecord by the (future) reconciliation worker."
+        ),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-observed_at"]
+        constraints = [
+            UniqueConstraint(
+                fields=["device", "external_id"],
+                name="unique_event_external_id_per_device",
+            ),
+        ]
+        verbose_name = "Attendance event"
+        verbose_name_plural = "Attendance events"
+
+    def __str__(self):
+        return f"{self.device.name} · {self.external_id} · {self.get_status_display()}"
