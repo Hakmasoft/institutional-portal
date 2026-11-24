@@ -62,6 +62,18 @@ login, users are routed to their role-specific home:
 | `admin` / superuser | `/admin/` (Django admin) |
 | `registrar`, `finance`, `parent` | generic welcome page (placeholder) |
 
+### Lecturer workflow (in progress)
+
+- `/lecturer/` — grid of coordinated offerings
+- `/lecturer/offerings/<id>/` — offering detail: course info, recent
+  sessions, enrolled students roster, "Take attendance" action
+- `/lecturer/offerings/<id>/attendance/today/` — attendance marking
+  (placeholder until Task 11)
+
+Object-level authorization: the coordinator of the offering, the HOD of
+its department, the Dean of its faculty, and superusers can all view.
+Other lecturers see 403.
+
 Demo credentials (after `seed_demo`):
 
 - Lecturer: `lecturer1` / `demo1234!`

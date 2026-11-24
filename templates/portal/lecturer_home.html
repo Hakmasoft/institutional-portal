@@ -17,6 +17,12 @@
                 </div>
                 <p class="m-0">{{ offering.course.title }}</p>
                 <p class="m-0 text-sm text-text-muted">{{ offering.term }}</p>
+                <div class="mt-4">
+                    <c-button variant="secondary"
+                              href="{% url 'portal:offering_detail' offering.pk %}">
+                        View details
+                    </c-button>
+                </div>
             </c-card>
         {% endfor %}
     </div>

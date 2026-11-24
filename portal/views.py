@@ -1,6 +1,10 @@
-from django.shortcuts import redirect, render
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404, redirect, render
 
+from academics.models import CourseOffering
 from accounts.decorators import role_required
+
+from .permissions import can_view_offering
 
 
 def home_view(request):
@@ -41,4 +45,53 @@ def lecturer_home(request):
         request,
         "portal/lecturer_home.html",
         {"offerings": offerings},
+    )
+
+
+@role_required("lecturer", "hod", "dean")
+def offering_detail(request, pk):
+    offering = get_object_or_404(
+        CourseOffering.objects.select_related(
+            "course__department__faculty",
+            "term",
+            "coordinator",
+        ).prefetch_related(
+            "enrollments__student__user",
+            "enrollments__student__programme",
+        ),
+        pk=pk,
+    )
+    if not can_view_offering(request.user, offering):
+        raise PermissionDenied
+
+    enrollments = (
+        offering.enrollments.filter(status="enrolled")
+        .select_related("student__user", "student__programme")
+        .order_by("student__student_number")
+    )
+    recent_sessions = offering.sessions.all()[:5]
+
+    return render(
+        request,
+        "portal/offering_detail.html",
+        {
+            "offering": offering,
+            "enrollments": enrollments,
+            "recent_sessions": recent_sessions,
+        },
+    )
+
+
+@role_required("lecturer", "hod", "dean")
+def take_attendance_placeholder(request, pk):
+    offering = get_object_or_404(
+        CourseOffering.objects.select_related("course", "term"),
+        pk=pk,
+    )
+    if not can_view_offering(request.user, offering):
+        raise PermissionDenied
+    return render(
+        request,
+        "portal/attendance_placeholder.html",
+        {"offering": offering},
     )

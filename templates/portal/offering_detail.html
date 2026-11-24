@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}{{ offering.course.code }} &middot; Institutional Portal{% endblock %}
+
+{% block content %}
+<p class="text-sm">
+    <a href="{% url 'portal:lecturer_home' %}">&larr; My courses</a>
+</p>
+
+<div class="mb-6 flex flex-wrap items-start justify-between gap-4">
+    <div>
+        <h1 class="mb-1">{{ offering.course.code }} — {{ offering.course.title }}</h1>
+        <p class="m-0 text-text-muted">
+            {{ offering.term }}
+            &middot; {{ offering.course.credit_units }} credit units
+            &middot; {{ offering.course.department.name }}
+        </p>
+    </div>
+    <c-button variant="primary"
+              href="{% url 'portal:take_attendance' offering.pk %}">
+        Take attendance
+    </c-button>
+</div>
+
+<c-card>
+    <div class="cluster">
+        <div>
+            <div class="text-sm text-text-muted">Coordinator</div>
+            <div>
+                {% if offering.coordinator %}
+                    {{ offering.coordinator.get_full_name|default:offering.coordinator.username }}
+                {% else %}
+                    <span class="text-text-muted">Unassigned</span>
+                {% endif %}
+            </div>
+        </div>
+        <div>
+            <div class="text-sm text-text-muted">Enrolled students</div>
+            <div>{{ enrollments|length }}</div>
+        </div>
+    </div>
+</c-card>
+
+<h2>Recent sessions</h2>
+
+{% if recent_sessions %}
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {% for session in recent_sessions %}
+            <c-card>
+                <div class="mb-2 flex items-baseline justify-between gap-3">
+                    <strong>{{ session.date|date:"j M Y" }}</strong>
+                    {% if session.status == "held" %}
+                        <c-badge variant="present">Held</c-badge>
+                    {% elif session.status == "cancelled" %}
+                        <c-badge variant="absent">Cancelled</c-badge>
+                    {% else %}
+                        <c-badge variant="neutral">Scheduled</c-badge>
+                    {% endif %}
+                </div>
+                <p class="m-0 text-sm">
+                    {{ session.start_time|time:"H:i" }}&ndash;{{ session.end_time|time:"H:i" }}
+                    {% if session.venue %}&middot; {{ session.venue }}{% endif %}
+                </p>
+                {% if session.topic %}
+                    <p class="m-0 text-sm text-text-muted">{{ session.topic }}</p>
+                {% endif %}
+            </c-card>
+        {% endfor %}
+    </div>
+{% else %}
+    <c-empty-state title="No sessions yet">
+        No class sessions have been recorded for this offering.
+    </c-empty-state>
+{% endif %}
+
+<h2>Roster</h2>
+
+{% if enrollments %}
+    <c-table>
+        <thead>
+            <tr>
+                <th>Student number</th>
+                <th>Name</th>
+                <th>Programme</th>
+                <th>Year</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for enrollment in enrollments %}
+                <tr>
+                    <td>{{ enrollment.student.student_number }}</td>
+                    <td>{{ enrollment.student.user.get_full_name|default:enrollment.student.user.username }}</td>
+                    <td>{{ enrollment.student.programme.code }}</td>
+                    <td>{{ enrollment.student.year_of_study }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </c-table>
+{% else %}
+    <c-empty-state title="No students enrolled">
+        No students are enrolled in this offering yet.
+    </c-empty-state>
+{% endif %}
+{% endblock %}
