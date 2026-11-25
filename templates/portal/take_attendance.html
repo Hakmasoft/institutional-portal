@@ -26,7 +26,12 @@
         </div>
     </header>
 
-    <form id="attendance-form" class="attendance-form">
+    <div id="attendance-error" class="attendance-error" hidden></div>
+
+    <form id="attendance-form"
+          action="{% url 'portal:save_attendance' offering.pk %}"
+          class="attendance-form"
+          data-redirect-url="{% url 'portal:offering_detail' offering.pk %}">
         {% csrf_token %}
 
         <div class="attendance-roster">
@@ -81,17 +86,27 @@
                         </button>
                     </div>
                     <div class="attendance-save-wrap">
-                        <button type="submit" class="attendance-save" disabled>
+                        <button type="button" id="save-btn" class="attendance-save">
                             Save attendance
                         </button>
-                        <span class="attendance-save-note">
-                            Saving will be enabled in the next release.
-                        </span>
                     </div>
                 </div>
             </footer>
         {% endif %}
     </form>
+
+    <dialog id="save-dialog" class="attendance-save-dialog">
+        <h2 class="mt-0">Save attendance</h2>
+        <p id="save-dialog-summary" class="text-text-muted"></p>
+        <div class="cluster mt-6" style="justify-content: flex-end;">
+            <c-button id="save-dialog-cancel" variant="secondary">
+                Cancel
+            </c-button>
+            <c-button id="save-dialog-confirm" variant="primary">
+                Save
+            </c-button>
+        </div>
+    </dialog>
 </div>
 
 <script src="{% static 'js/attendance.js' %}" defer></script>

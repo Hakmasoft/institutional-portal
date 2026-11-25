@@ -1,5 +1,6 @@
 {% if href %}
     <a href="{{ href }}"
+       {{ attrs }}
        class="inline-flex items-center justify-center gap-2 rounded-md
               px-4 py-2.5 text-base font-medium no-underline transition-colors
               {% if variant == 'primary' %}bg-primary text-white hover:bg-primary-hover
@@ -12,6 +13,7 @@
     </a>
 {% else %}
     <button type="{{ type|default:'button' }}"
+            {{ attrs }}
             class="inline-flex items-center justify-center gap-2 rounded-md
                    px-4 py-2.5 text-base font-medium transition-colors
                    {% if variant == 'primary' %}bg-primary text-white hover:bg-primary-hover

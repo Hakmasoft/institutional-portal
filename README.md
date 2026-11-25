@@ -71,7 +71,10 @@ login, users are routed to their role-specific home:
   sticky header with session context and live summary, one row per
   enrolled student with four status toggles (present/absent/late/excused),
   sticky footer with "mark all present" / "mark all absent" bulk actions
-  and a disabled Save button (submission lands in the next release)
+  and a Save button
+- `/lecturer/offerings/<id>/attendance/today/save/` — POST endpoint that
+  upserts AttendanceRecords for today's session and flips the session
+  status from SCHEDULED to HELD
 
 Object-level authorization: the coordinator of the offering, the HOD of
 its department, the Dean of its faculty, and superusers can all view.

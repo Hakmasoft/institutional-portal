@@ -1,8 +1,14 @@
+import json
 from datetime import timedelta
 
+from django.contrib import messages
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from academics.models import AttendanceRecord, ClassSession, CourseOffering
 from accounts.decorators import role_required
@@ -148,6 +154,95 @@ def take_attendance(request, pk):
             "statuses": statuses,
         },
     )
+
+
+@role_required("lecturer", "hod", "dean")
+@require_POST
+def save_attendance(request, pk):
+    """Persist attendance for today's session of the offering.
+
+    Accepts JSON: {"records": [{"enrollment_id": int, "status": str}, ...]}
+
+    - Validates each enrollment belongs to the offering and has status
+      "enrolled"
+    - Validates each status is one of AttendanceRecord.Status values
+    - Upserts via update_or_create per record (auto timestamps fire)
+    - Flips session status SCHEDULED -> HELD
+    - Emits a Django messages.success flash for the redirect target
+    - Returns {"ok": true, "saved": N, "redirect_url": "..."}
+    """
+    offering = get_object_or_404(
+        CourseOffering.objects.select_related("course", "term"),
+        pk=pk,
+    )
+    if not can_view_offering(request.user, offering):
+        raise PermissionDenied
+
+    # Parse JSON body
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+        records_payload = payload.get("records")
+        if not isinstance(records_payload, list) or not records_payload:
+            raise ValueError("Payload must include a non-empty 'records' list.")
+    except (json.JSONDecodeError, ValueError) as exc:
+        return JsonResponse({"ok": False, "error": f"Invalid payload: {exc}"}, status=400)
+
+    session = _resolve_today_session(offering, request.user)
+
+    if session.status == ClassSession.Status.CANCELLED:
+        return JsonResponse(
+            {"ok": False, "error": "Cannot save attendance for a cancelled session."},
+            status=400,
+        )
+
+    # Build valid sets for validation
+    valid_enrollment_ids = set(
+        offering.enrollments.filter(status="enrolled").values_list("id", flat=True)
+    )
+    valid_statuses = {choice[0] for choice in AttendanceRecord.Status.choices}
+
+    # Validate every record up-front so the save is all-or-nothing
+    for r in records_payload:
+        if not isinstance(r, dict):
+            return JsonResponse(
+                {"ok": False, "error": "Each record must be an object."}, status=400
+            )
+        eid = r.get("enrollment_id")
+        status = r.get("status")
+        if eid not in valid_enrollment_ids:
+            return JsonResponse({"ok": False, "error": f"Invalid enrollment_id: {eid}"}, status=400)
+        if status not in valid_statuses:
+            return JsonResponse({"ok": False, "error": f"Invalid status: {status}"}, status=400)
+
+    # Upsert records
+    saved_count = 0
+    with transaction.atomic():
+        for r in records_payload:
+            AttendanceRecord.objects.update_or_create(
+                session=session,
+                enrollment_id=r["enrollment_id"],
+                defaults={
+                    "status": r["status"],
+                    "capture_method": AttendanceRecord.CaptureMethod.MANUAL,
+                    "captured_by": request.user,
+                    "captured_at": timezone.now(),
+                },
+            )
+            saved_count += 1
+
+    # Flip session to HELD if it was SCHEDULED
+    if session.status == ClassSession.Status.SCHEDULED:
+        session.status = ClassSession.Status.HELD
+        session.save()
+
+    # Flash for the redirect target
+    messages.success(
+        request,
+        f"Attendance saved for {saved_count} student{'s' if saved_count != 1 else ''}.",
+    )
+
+    redirect_url = reverse("portal:offering_detail", args=[offering.pk])
+    return JsonResponse({"ok": True, "saved": saved_count, "redirect_url": redirect_url})
 
 
 def _resolve_today_session(offering, user):

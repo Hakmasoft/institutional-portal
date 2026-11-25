@@ -18,4 +18,9 @@ urlpatterns = [
         views.take_attendance,
         name="take_attendance",
     ),
+    path(
+        "lecturer/offerings/<int:pk>/attendance/today/save/",
+        views.save_attendance,
+        name="save_attendance",
+    ),
 ]
